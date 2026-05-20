@@ -1,4 +1,5 @@
 import fs from "fs";
+import yaml from "js-yaml";
 
 // هيكل يمثل كل endpoint
 export interface Endpoint {
@@ -27,7 +28,9 @@ export interface ApiSpec {
 
 export function parseOpenApi(filePath: string): ApiSpec {
   const rawData = fs.readFileSync(filePath, "utf-8");
-  const spec = JSON.parse(rawData);
+const spec = filePath.endsWith(".yaml") || filePath.endsWith(".yml")
+  ? yaml.load(rawData) as any
+  : JSON.parse(rawData);
 
   const endpoints: Endpoint[] = [];
   const paths = spec.paths || {};
