@@ -1,0 +1,11 @@
+
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "esnext",
+    "types": ["node"],
+    "verbatimModuleSyntax": false,
+    "sourceMap": true,
+    "strict": true
+  }
+}
