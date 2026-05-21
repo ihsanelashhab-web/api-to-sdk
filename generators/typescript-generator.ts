@@ -13,19 +13,31 @@ export function generateTypeScriptSDK(spec: ApiSpec, outputDir: string): void {
   lines.push(`const BASE_URL = "${spec.baseUrl}";\n`);
 
   // دالة fetch مساعدة
-  lines.push(`async function request(method: string, path: string, body?: any, params?: Record<string, any>): Promise<any> {`);
-  lines.push(`  let url = BASE_URL + path;`);
-  lines.push(`  if (params) {`);
-  lines.push(`    const query = new URLSearchParams(params).toString();`);
-  lines.push(`    if (query) url += "?" + query;`);
-  lines.push(`  }`);
-  lines.push(`  const res = await fetch(url, {`);
-  lines.push(`    method,`);
-  lines.push(`    headers: { "Content-Type": "application/json" },`);
-  lines.push(`    body: body ? JSON.stringify(body) : undefined,`);
-  lines.push(`  });`);
-  lines.push(`  return res.json();`);
-  lines.push(`}\n`);
+lines.push(`let _apiKey: string | null = null;`);
+lines.push(`let _bearerToken: string | null = null;\n`);
+lines.push(`export function setApiKey(key: string): void {`);
+lines.push(`  _apiKey = key;`);
+lines.push(`}`);
+lines.push(`\nexport function setBearerToken(token: string): void {`);
+lines.push(`  _bearerToken = token;`);
+lines.push(`}\n`);
+lines.push(`async function request(method: string, path: string, body?: any, params?: Record<string, any>): Promise<any> {`);
+lines.push(`  let url = BASE_URL + path;`);
+lines.push(`  if (params) {`);
+lines.push(`    const query = new URLSearchParams(params).toString();`);
+lines.push(`    if (query) url += "?" + query;`);
+lines.push(`  }`);
+lines.push(`  const headers: Record<string, string> = { "Content-Type": "application/json" };`);
+lines.push(`  if (_apiKey) headers["X-API-Key"] = _apiKey;`);
+lines.push(`  if (_bearerToken) headers["Authorization"] = "Bearer " + _bearerToken;`);
+lines.push(`  const res = await fetch(url, {`);
+lines.push(`    method,`);
+lines.push(`    headers,`);
+lines.push(`    body: body ? JSON.stringify(body) : undefined,`);
+lines.push(`  });`);
+lines.push(`  if (!res.ok) throw new Error("API Error: " + res.status + " " + res.statusText);`);
+lines.push(`  return res.json();`);
+lines.push(`}\n`);
 
   // توليد دالة لكل endpoint
   spec.endpoints.forEach((endpoint: Endpoint) => {

@@ -3,17 +3,32 @@
 
 const BASE_URL = "https://api.example.com/v1";
 
+let _apiKey: string | null = null;
+let _bearerToken: string | null = null;
+
+export function setApiKey(key: string): void {
+  _apiKey = key;
+}
+
+export function setBearerToken(token: string): void {
+  _bearerToken = token;
+}
+
 async function request(method: string, path: string, body?: any, params?: Record<string, any>): Promise<any> {
   let url = BASE_URL + path;
   if (params) {
     const query = new URLSearchParams(params).toString();
     if (query) url += "?" + query;
   }
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (_apiKey) headers["X-API-Key"] = _apiKey;
+  if (_bearerToken) headers["Authorization"] = "Bearer " + _bearerToken;
   const res = await fetch(url, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   });
+  if (!res.ok) throw new Error("API Error: " + res.status + " " + res.statusText);
   return res.json();
 }
 
