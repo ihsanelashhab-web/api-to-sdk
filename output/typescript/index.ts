@@ -14,7 +14,11 @@ export function setBearerToken(token: string): void {
   _bearerToken = token;
 }
 
-async function request(method: string, path: string, body?: any, params?: Record<string, any>): Promise<any> {
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function request(method: string, path: string, body?: any, params?: Record<string, any>, retries = 3): Promise<any> {
   let url = BASE_URL + path;
   if (params) {
     const query = new URLSearchParams(params).toString();
@@ -23,13 +27,23 @@ async function request(method: string, path: string, body?: any, params?: Record
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (_apiKey) headers["X-API-Key"] = _apiKey;
   if (_bearerToken) headers["Authorization"] = "Bearer " + _bearerToken;
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) throw new Error("API Error: " + res.status + " " + res.statusText);
-  return res.json();
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (res.status === 429 || res.status >= 500) {
+        if (attempt < retries) { await sleep(attempt * 1000); continue; }
+      }
+      if (!res.ok) throw new Error("API Error: " + res.status + " " + res.statusText);
+      return res.json();
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await sleep(attempt * 1000);
+    }
+  }
 }
 
 /** Fetch all pages automatically */
