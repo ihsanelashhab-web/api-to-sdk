@@ -12,7 +12,13 @@ import { generateGoSDK } from "./generators/go-generator";
 import { generateJavaSDK } from "./generators/java-generator";
 
 const app = express();
-const upload = multer({ dest: "uploads/" });
+const storage = multer.diskStorage({
+  destination: "uploads/",
+  filename: (_req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  }
+});
+const upload = multer({ storage });
 
 app.use(cors());
 app.use(express.json());

@@ -15,7 +15,13 @@ const dart_generator_1 = require("./generators/dart-generator");
 const go_generator_1 = require("./generators/go-generator");
 const java_generator_1 = require("./generators/java-generator");
 const app = (0, express_1.default)();
-const upload = (0, multer_1.default)({ dest: "uploads/" });
+const storage = multer_1.default.diskStorage({
+    destination: "uploads/",
+    filename: (_req, file, cb) => {
+        cb(null, Date.now() + "-" + file.originalname);
+    }
+});
+const upload = (0, multer_1.default)({ storage });
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.post("/generate", upload.single("file"), (req, res) => {
