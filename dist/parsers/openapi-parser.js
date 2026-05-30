@@ -5,9 +5,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseOpenApi = parseOpenApi;
 const fs_1 = __importDefault(require("fs"));
+const js_yaml_1 = __importDefault(require("js-yaml"));
 function parseOpenApi(filePath) {
     const rawData = fs_1.default.readFileSync(filePath, "utf-8");
-    const spec = JSON.parse(rawData);
+    const spec = filePath.endsWith(".yaml") || filePath.endsWith(".yml")
+        ? js_yaml_1.default.load(rawData)
+        : JSON.parse(rawData);
     const endpoints = [];
     const paths = spec.paths || {};
     for (const route in paths) {
