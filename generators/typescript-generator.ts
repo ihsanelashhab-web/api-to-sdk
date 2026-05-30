@@ -26,7 +26,7 @@ export function generateTypeScriptSDK(spec: ApiSpec, outputDir: string): void {
   lines.push(`  return new Promise(resolve => setTimeout(resolve, ms));`);
   lines.push(`}\n`);
 
-  lines.push(`async function request(method: string, path: string, body?: any, params?: Record<string, any>, retries = 3): Promise<any> {`);
+  lines.push(`async function request(method: string, path: string, body?: Record<string, unknown>, params?: Record<string, string>, retries = 3): Promise<unknown> {`);
   lines.push(`  let url = BASE_URL + path;`);
   lines.push(`  if (params) {`);
   lines.push(`    const query = new URLSearchParams(params).toString();`);
@@ -55,8 +55,8 @@ export function generateTypeScriptSDK(spec: ApiSpec, outputDir: string): void {
   lines.push(`}\n`);
 
   lines.push(`/** Fetch all pages automatically */`);
-  lines.push(`export async function paginate(fn: (page: number) => Promise<any>, maxPages = 10): Promise<any[]> {`);
-  lines.push(`  const results: any[] = [];`);
+  lines.push(`export async function paginate(fn: (page: number) => Promise<unknown>, maxPages = 10): Promise<unknown[]> {`);
+  lines.push(`  const results: unknown[] = [];`);
   lines.push(`  for (let page = 1; page <= maxPages; page++) {`);
   lines.push(`    const data = await fn(page);`);
   lines.push(`    if (!data || (Array.isArray(data) && data.length === 0)) break;`);
@@ -74,8 +74,8 @@ export function generateTypeScriptSDK(spec: ApiSpec, outputDir: string): void {
 
     const args: string[] = [];
     pathParams.forEach(p => args.push(`${p.name}: ${p.type === "integer" ? "number" : "string"}`));
-    if (queryParams.length > 0) args.push(`params?: Record<string, any>`);
-    if (endpoint.requestBody) args.push(`body?: Record<string, any>`);
+    if (queryParams.length > 0) args.push(`params?: Record<string, string>`);
+    if (endpoint.requestBody) args.push(`body?: Record<string, unknown>`);
 
     let route = endpoint.route;
     pathParams.forEach(p => {
@@ -83,7 +83,7 @@ export function generateTypeScriptSDK(spec: ApiSpec, outputDir: string): void {
     });
 
     lines.push(`/** ${endpoint.summary} */`);
-    lines.push(`export async function ${fnName}(${args.join(", ")}): Promise<any> {`);
+    lines.push(`export async function ${fnName}(${args.join(", ")}): Promise<unknown> {`);
 
     if (queryParams.length > 0 && endpoint.requestBody) {
       lines.push(`  return request("${endpoint.method}", \`${route}\`, body, params);`);
