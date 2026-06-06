@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "exclude": ["node_modules", "output", "sdk-output"]
+  "exclude": ["node_modules", "output", "sdk-output", "sdk-test", "temp-output", "final-output", "test-output", "yaml-test"]
 }
