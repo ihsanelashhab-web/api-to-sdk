@@ -1,0 +1,21 @@
+{
+  "openapi": "3.0.0",
+  "info": { "title": "Healthcare API", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.hospital.com/v1" }],
+  "paths": {
+    "/patients": {
+      "get": { "summary": "Get all patients", "operationId": "getPatients", "responses": {"200": {"description": "List of patients"}} },
+      "post": { "summary": "Register new patient", "operationId": "registerPatient", "responses": {"201": {"description": "Patient registered"}} }
+    },
+    "/patients/{id}/records": {
+      "get": { "summary": "Get patient medical records", "operationId": "getMedicalRecords", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}], "responses": {"200": {"description": "Medical records"}, "403": {"description": "Unauthorized"}} }
+    },
+    "/appointments": {
+      "get": { "summary": "List appointments", "operationId": "getAppointments", "responses": {"200": {"description": "Appointments list"}} },
+      "post": { "summary": "Book appointment", "operationId": "bookAppointment", "responses": {"201": {"description": "Appointment booked"}, "409": {"description": "Time slot unavailable"}} }
+    },
+    "/doctors": {
+      "get": { "summary": "Get all doctors", "operationId": "getDoctors", "parameters": [{"name": "specialty", "in": "query", "schema": {"type": "string"}}], "responses": {"200": {"description": "Doctors list"}} }
+    }
+  }
+}

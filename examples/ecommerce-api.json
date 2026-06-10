@@ -1,0 +1,22 @@
+{
+  "openapi": "3.0.0",
+  "info": { "title": "E-Commerce API", "version": "2.1.0" },
+  "servers": [{ "url": "https://api.shop.com/v2" }],
+  "paths": {
+    "/products": {
+      "get": { "summary": "Get all products", "operationId": "getProducts", "parameters": [{"name": "category", "in": "query", "schema": {"type": "string"}}, {"name": "price_max", "in": "query", "schema": {"type": "number"}}], "responses": {"200": {"description": "List of products"}} },
+      "post": { "summary": "Create product", "operationId": "createProduct", "responses": {"201": {"description": "Product created"}} }
+    },
+    "/orders": {
+      "get": { "summary": "Get all orders", "operationId": "getOrders", "responses": {"200": {"description": "List of orders"}} },
+      "post": { "summary": "Place new order", "operationId": "placeOrder", "responses": {"201": {"description": "Order placed"}, "400": {"description": "Invalid order"}} }
+    },
+    "/orders/{id}": {
+      "get": { "summary": "Get order by ID", "operationId": "getOrder", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}], "responses": {"200": {"description": "Order details"}, "404": {"description": "Order not found"}} },
+      "delete": { "summary": "Cancel order", "operationId": "cancelOrder", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}], "responses": {"200": {"description": "Order cancelled"}} }
+    },
+    "/customers/{id}": {
+      "get": { "summary": "Get customer profile", "operationId": "getCustomer", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}], "responses": {"200": {"description": "Customer profile"}} }
+    }
+  }
+}
