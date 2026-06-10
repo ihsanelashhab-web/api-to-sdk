@@ -96,7 +96,30 @@ app.post("/generate-batch", upload.array("files", 20), async (req, res) => {
     if (!files || files.length === 0) {
       return res.status(400).json({ error: "No files uploaded" });
     }
+// API Change Detection
+app.post("/detect-changes", upload.fields([
+  { name: "oldFile", maxCount: 1 },
+  { name: "newFile", maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    if (!files.oldFile || !files.newFile) {
+      return res.status(400).json({ error: "Please upload both old and new API files" });
+    }
 
+    const { detectChanges } = await import("./utils/change-detector");
+    const oldSpec = parseOpenApi(files.oldFile[0].path);
+    const newSpec = parseOpenApi(files.newFile[0].path);
+    const report = detectChanges(oldSpec, newSpec);
+
+    fs.rmSync(files.oldFile[0].path, { force: true });
+    fs.rmSync(files.newFile[0].path, { force: true });
+
+    res.json({ success: true, report });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
     const langs = req.body.langs ? JSON.parse(req.body.langs) : ["typescript"];
     const results: any[] = [];
 
@@ -155,7 +178,27 @@ app.post("/generate-batch", upload.array("files", 20), async (req, res) => {
 app.get("/health", (req, res) => {
   res.json({ status: "ok", name: "SDKCraft API" });
 });
-
+ // API Change Detection
+app.post("/detect-changes", upload.fields([
+  { name: "oldFile", maxCount: 1 },
+  { name: "newFile", maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    if (!files.oldFile || !files.newFile) {
+      return res.status(400).json({ error: "Please upload both old and new API files" });
+    }
+    const { detectChanges } = await import("./utils/change-detector");
+    const oldSpec = parseOpenApi(files.oldFile[0].path);
+    const newSpec = parseOpenApi(files.newFile[0].path);
+    const report = detectChanges(oldSpec, newSpec);
+    fs.rmSync(files.oldFile[0].path, { force: true });
+    fs.rmSync(files.newFile[0].path, { force: true });
+    res.json({ success: true, report });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
 const PORT = 4000;
 app.listen(PORT, () => {
   console.log(`✅ SDKCraft API running on http://localhost:${PORT}`);
