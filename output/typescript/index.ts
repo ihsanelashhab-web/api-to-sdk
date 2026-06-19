@@ -14,11 +14,32 @@ export function setBearerToken(token: string): void {
   _bearerToken = token;
 }
 
+// ---- Models ----
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  age?: number | null;
+}
+
+export interface CreateUserRequest {
+  name: string;
+  email: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  inStock?: boolean;
+}
+
 async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function request(method: string, path: string, body?: any, params?: Record<string, any>, retries = 3): Promise<any> {
+async function request<T>(method: string, path: string, body?: Record<string, unknown>, params?: Record<string, string>, retries = 3): Promise<T> {
   let url = BASE_URL + path;
   if (params) {
     const query = new URLSearchParams(params).toString();
@@ -37,44 +58,43 @@ async function request(method: string, path: string, body?: any, params?: Record
       if (res.status === 429 || res.status >= 500) {
         if (attempt < retries) { await sleep(attempt * 1000); continue; }
       }
-      if (!res.ok) throw new Error("API Error: " + res.status + " " + res.statusText);
-      return res.json();
+      if (!res.ok) throw new Error(`API Error ${res.status}: ${res.statusText}`);
+      return res.json() as Promise<T>;
     } catch (err) {
       if (attempt === retries) throw err;
       await sleep(attempt * 1000);
     }
   }
+  throw new Error("Request failed after " + retries + " retries");
 }
 
 /** Fetch all pages automatically */
-export async function paginate(fn: (page: number) => Promise<any>, maxPages = 10): Promise<any[]> {
-  const results: any[] = [];
+export async function paginate<T>(fn: (page: number) => Promise<T[]>, maxPages = 10): Promise<T[]> {
+  const results: T[] = [];
   for (let page = 1; page <= maxPages; page++) {
     const data = await fn(page);
-    if (!data || (Array.isArray(data) && data.length === 0)) break;
-    if (Array.isArray(data)) results.push(...data);
-    else if (data.data) results.push(...data.data);
-    else { results.push(data); break; }
+    if (!data || data.length === 0) break;
+    results.push(...data);
   }
   return results;
 }
 
 /** Get all users */
-export async function getUsers(params?: Record<string, any>): Promise<any> {
-  return request("GET", `/users`, undefined, params);
+export async function getUsers(params?: Record<string, string>): Promise<User[]> {
+  return request<User[]>("GET", `/users`, undefined, params);
 }
 
 /** Create a new user */
-export async function createUser(body?: Record<string, any>): Promise<any> {
-  return request("POST", `/users`, body);
+export async function createUser(body?: CreateUserRequest): Promise<User> {
+  return request<User>("POST", `/users`, body as Record<string, unknown>);
 }
 
 /** Get user by ID */
-export async function getUserById(id: string): Promise<any> {
-  return request("GET", `/users/${id}`);
+export async function getUserById(id: string): Promise<User> {
+  return request<User>("GET", `/users/${id}`);
 }
 
 /** Get all products */
-export async function getProducts(): Promise<any> {
-  return request("GET", `/products`);
+export async function getProducts(): Promise<Product[]> {
+  return request<Product[]>("GET", `/products`);
 }

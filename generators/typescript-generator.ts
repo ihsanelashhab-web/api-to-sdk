@@ -1,6 +1,20 @@
 import fs from "fs";
 import path from "path";
-import { ApiSpec, Endpoint } from "../parsers/openapi-parser";
+import { ApiSpec, Endpoint, Model } from "../parsers/openapi-parser";
+
+function generateModels(models: Model[]): string[] {
+  const lines: string[] = [];
+  models.forEach(model => {
+    lines.push(`export interface ${model.name} {`);
+    model.fields.forEach(field => {
+      const optional = !field.required ? "?" : "";
+      const nullable = field.nullable ? " | null" : "";
+      lines.push(`  ${field.name}${optional}: ${field.type}${nullable};`);
+    });
+    lines.push(`}\n`);
+  });
+  return lines;
+}
 
 export function generateTypeScriptSDK(spec: ApiSpec, outputDir: string): void {
   fs.mkdirSync(outputDir, { recursive: true });
@@ -22,11 +36,17 @@ export function generateTypeScriptSDK(spec: ApiSpec, outputDir: string): void {
   lines.push(`  _bearerToken = token;`);
   lines.push(`}\n`);
 
+  // Models
+  if (spec.models.length > 0) {
+    lines.push(`// ---- Models ----\n`);
+    generateModels(spec.models).forEach(l => lines.push(l));
+  }
+
   lines.push(`async function sleep(ms: number): Promise<void> {`);
   lines.push(`  return new Promise(resolve => setTimeout(resolve, ms));`);
   lines.push(`}\n`);
 
-  lines.push(`async function request(method: string, path: string, body?: Record<string, unknown>, params?: Record<string, string>, retries = 3): Promise<unknown> {`);
+  lines.push(`async function request<T>(method: string, path: string, body?: Record<string, unknown>, params?: Record<string, string>, retries = 3): Promise<T> {`);
   lines.push(`  let url = BASE_URL + path;`);
   lines.push(`  if (params) {`);
   lines.push(`    const query = new URLSearchParams(params).toString();`);
@@ -45,37 +65,44 @@ export function generateTypeScriptSDK(spec: ApiSpec, outputDir: string): void {
   lines.push(`      if (res.status === 429 || res.status >= 500) {`);
   lines.push(`        if (attempt < retries) { await sleep(attempt * 1000); continue; }`);
   lines.push(`      }`);
-  lines.push(`      if (!res.ok) throw new Error("API Error: " + res.status + " " + res.statusText);`);
-  lines.push(`      return res.json();`);
+  lines.push(`      if (!res.ok) throw new Error(\`API Error \${res.status}: \${res.statusText}\`);`);
+  lines.push(`      return res.json() as Promise<T>;`);
   lines.push(`    } catch (err) {`);
   lines.push(`      if (attempt === retries) throw err;`);
   lines.push(`      await sleep(attempt * 1000);`);
   lines.push(`    }`);
   lines.push(`  }`);
+  lines.push(`  throw new Error("Request failed after " + retries + " retries");`);
   lines.push(`}\n`);
 
   lines.push(`/** Fetch all pages automatically */`);
-  lines.push(`export async function paginate(fn: (page: number) => Promise<unknown>, maxPages = 10): Promise<unknown[]> {`);
-  lines.push(`  const results: unknown[] = [];`);
+  lines.push(`export async function paginate<T>(fn: (page: number) => Promise<T[]>, maxPages = 10): Promise<T[]> {`);
+  lines.push(`  const results: T[] = [];`);
   lines.push(`  for (let page = 1; page <= maxPages; page++) {`);
   lines.push(`    const data = await fn(page);`);
-  lines.push(`    if (!data || (Array.isArray(data) && data.length === 0)) break;`);
-  lines.push(`    if (Array.isArray(data)) results.push(...data);`);
-  lines.push(`    else if (data.data) results.push(...data.data);`);
-  lines.push(`    else { results.push(data); break; }`);
+  lines.push(`    if (!data || data.length === 0) break;`);
+  lines.push(`    results.push(...data);`);
   lines.push(`  }`);
   lines.push(`  return results;`);
   lines.push(`}\n`);
 
+  // Endpoints
   spec.endpoints.forEach((endpoint: Endpoint) => {
     const fnName = endpoint.operationId;
     const pathParams = endpoint.parameters.filter(p => p.in === "path");
     const queryParams = endpoint.parameters.filter(p => p.in === "query");
 
+    // تحديد الـ return type
+    const returnType = endpoint.responseModel || "unknown";
+
     const args: string[] = [];
     pathParams.forEach(p => args.push(`${p.name}: ${p.type === "integer" ? "number" : "string"}`));
     if (queryParams.length > 0) args.push(`params?: Record<string, string>`);
-    if (endpoint.requestBody) args.push(`body?: Record<string, unknown>`);
+    if (endpoint.requestBodyModel) {
+      args.push(`body?: ${endpoint.requestBodyModel}`);
+    } else if (endpoint.requestBody) {
+      args.push(`body?: Record<string, unknown>`);
+    }
 
     let route = endpoint.route;
     pathParams.forEach(p => {
@@ -83,16 +110,16 @@ export function generateTypeScriptSDK(spec: ApiSpec, outputDir: string): void {
     });
 
     lines.push(`/** ${endpoint.summary} */`);
-    lines.push(`export async function ${fnName}(${args.join(", ")}): Promise<unknown> {`);
+    lines.push(`export async function ${fnName}(${args.join(", ")}): Promise<${returnType}> {`);
 
     if (queryParams.length > 0 && endpoint.requestBody) {
-      lines.push(`  return request("${endpoint.method}", \`${route}\`, body, params);`);
+      lines.push(`  return request<${returnType}>("${endpoint.method}", \`${route}\`, body, params);`);
     } else if (queryParams.length > 0) {
-      lines.push(`  return request("${endpoint.method}", \`${route}\`, undefined, params);`);
+      lines.push(`  return request<${returnType}>("${endpoint.method}", \`${route}\`, undefined, params);`);
     } else if (endpoint.requestBody) {
-      lines.push(`  return request("${endpoint.method}", \`${route}\`, body);`);
+      lines.push(`  return request<${returnType}>("${endpoint.method}", \`${route}\`, body as Record<string, unknown>);`);
     } else {
-      lines.push(`  return request("${endpoint.method}", \`${route}\`);`);
+      lines.push(`  return request<${returnType}>("${endpoint.method}", \`${route}\`);`);
     }
 
     lines.push(`}\n`);
