@@ -5,17 +5,19 @@ import multer from "multer";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
-import { parseOpenApi } from "./parsers/openapi-parser";
-import { generateTypeScriptSDK } from "./generators/typescript-generator";
-import { generatePythonSDK } from "./generators/python-generator";
-import { generateDartSDK } from "./generators/dart-generator";
-import { generateGoSDK } from "./generators/go-generator";
-import { generateJavaSDK } from "./generators/java-generator";
+import {
+  parseOpenApi,
+  generateTypeScriptSDK,
+  generatePythonSDK,
+  generateDartSDK,
+  generateGoSDK,
+  generateJavaSDK,
+  generateKotlinSDK,
+} from "sdkcraft-core";
 
 const app = express();
 const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (_req, file, cb) => {
+  destination: "uploads/",   filename: (_req, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname);
   }
 });
@@ -44,7 +46,7 @@ app.post("/generate", upload.single("file"), (req, res) => {
     if (langs.includes("dart"))       generateDartSDK(spec, path.join(outputDir, "dart"));
     if (langs.includes("go"))         generateGoSDK(spec, path.join(outputDir, "go"));
     if (langs.includes("java"))       generateJavaSDK(spec, path.join(outputDir, "java"));
-
+if (langs.includes("kotlin"))     generateKotlinSDK(spec, path.join(outputDir, "kotlin"));
     // جمع كل الملفات المولّدة
     const files: Record<string, string> = {};
     const collectFiles = (dir: string, prefix = "") => {
@@ -133,7 +135,7 @@ app.post("/detect-changes", upload.fields([
         if (langs.includes("dart"))       generateDartSDK(spec, path.join(outputDir, "dart"));
         if (langs.includes("go"))         generateGoSDK(spec, path.join(outputDir, "go"));
         if (langs.includes("java"))       generateJavaSDK(spec, path.join(outputDir, "java"));
-
+if (langs.includes("kotlin"))     generateKotlinSDK(spec, path.join(outputDir, "kotlin"));
         const generatedFiles: Record<string, string> = {};
         const collectFiles = (dir: string, prefix = "") => {
           if (!fs.existsSync(dir)) return;
