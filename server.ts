@@ -16,7 +16,7 @@ import {
   generateCSharpSDK,
   generateSwiftSDK,
 } from "sdkcraft-core";
-
+import { scoreSDK } from "./utils/sdk-scorer";
 const app = express();
 const storage = multer.diskStorage({
   destination: "uploads/",   filename: (_req, file, cb) => {
@@ -70,13 +70,16 @@ if (langs.includes("swift"))     generateSwiftSDK(spec, path.join(outputDir, "sw
     fs.rmSync(inputPath, { force: true });
     fs.rmSync(outputDir, { recursive: true, force: true });
 
-    res.json({
-      success: true,
-      title: spec.title,
-      version: spec.version,
-      endpoints: spec.endpoints.length,
-      files,
-    });
+ const score = scoreSDK(spec);
+
+res.json({
+  success: true,
+  title: spec.title,
+  version: spec.version,
+  endpoints: spec.endpoints.length,
+  files,
+  score,
+});
 
   } catch (error: any) {
     res.status(500).json({ error: error.message });

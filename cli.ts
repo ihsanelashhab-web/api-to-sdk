@@ -1,12 +1,7 @@
 #!/usr/bin/env node
 import "dotenv/config";
 import fs from "fs";
-import { parseOpenApi } from "./parsers/openapi-parser";
-import { generateTypeScriptSDK } from "./generators/typescript-generator";
-import { generatePythonSDK } from "./generators/python-generator";
-import { generateDartSDK } from "./generators/dart-generator";
-import { generateGoSDK } from "./generators/go-generator";
-import { generateJavaSDK } from "./generators/java-generator";
+import { parseOpenApi, generateTypeScriptSDK, generatePythonSDK, generateDartSDK, generateGoSDK, generateJavaSDK } from "sdkcraft-core";
 import { generateAIDocs } from "./generators/doc-generator";
 
 const args = process.argv.slice(2);
