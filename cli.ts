@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import "dotenv/config";
 import fs from "fs";
-import { parseOpenApi, generateTypeScriptSDK, generatePythonSDK, generateDartSDK, generateGoSDK, generateJavaSDK } from "sdkcraft-core";
+import { parseOpenApi, generateTypeScriptSDK, generatePythonSDK, generateDartSDK, generateGoSDK, generateJavaSDK, generateKotlinSDK, generateCSharpSDK, generateSwiftSDK } from "sdkcraft-core";
 import { generateAIDocs } from "./generators/doc-generator";
 
 const args = process.argv.slice(2);
@@ -16,12 +16,12 @@ const lang   = getArg("--lang");
 const output = getArg("--output");
 const docs   = args.includes("--docs");
 
-const validLangs = ["typescript", "python", "dart", "go", "java", "all"];
+const validLangs = ["typescript", "python", "dart", "go", "java", "kotlin", "csharp", "swift", "all"];
 
 if (!input || !lang || !output) {
   console.error("❌ Missing required arguments.\n");
   console.log("Usage: api-to-sdk --input <file> --lang <language> --output <dir>");
-  console.log("Languages: typescript | python | dart | go | java | all");
+  console.log("Languages: typescript | python | dart | go | java | kotlin | csharp | swift | all");
   process.exit(1);
 }
 
@@ -52,6 +52,11 @@ async function main() {
     if (lang === "typescript" || lang === "all") generateTypeScriptSDK(spec, output + "/typescript");
     if (lang === "python"     || lang === "all") generatePythonSDK(spec, output + "/python");
     if (lang === "dart"       || lang === "all") generateDartSDK(spec, output + "/dart");
+    if (lang === "go"         || lang === "all") generateGoSDK(spec, output + "/go");
+    if (lang === "java"       || lang === "all") generateJavaSDK(spec, output + "/java");
+    if (lang === "kotlin"     || lang === "all") generateKotlinSDK(spec, output + "/kotlin");
+    if (lang === "csharp"     || lang === "all") generateCSharpSDK(spec, output + "/csharp");
+    if (lang === "swift"      || lang === "all") generateSwiftSDK(spec, output + "/swift");
 
     // ✅ توليد الدوكيومنتيشن بالذكاء الاصطناعي
     if (docs) {
